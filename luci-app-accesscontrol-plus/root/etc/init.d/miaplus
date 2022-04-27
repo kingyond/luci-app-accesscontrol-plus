@@ -238,42 +238,54 @@ add_rule(){
       break
     fi
     if [ "$enable" == "1" ]; then
-      for macaddr in $macaddrs
-      do
-        if [ $UTCTZ == "1" ]; then
+      if [ $UTCTZ == "1" ]; then
+        for macaddr in $macaddrs
+        do
           iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
           [ $strict -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
-        else
-          local timeutc=$(convert_time_on_off $timeon $timeoff '')
-          local flag=$(echo $timeutc | awk -F ' ' '{print $1}')
-          local t=$(echo $timeutc | awk -F ' ' '{print $2}')
-          if [ "$t" != "0" ]; then
-            local timeon=$(echo $t | awk -F- '{print $1}')
-            local timeoff=$(echo $t | awk -F- '{print $2}')
-            if [ "$flag" == "-1" ]; then
-              local weekdays=$(convert_weekdays $z1 $z2 $z3 $z4 $z5 $z6 $z7 '' $flag)
+        done
+      else
+        local timeutc=$(convert_time_on_off $timeon $timeoff '')
+        local flag=$(echo $timeutc | awk -F ' ' '{print $1}')
+        local t=$(echo $timeutc | awk -F ' ' '{print $2}')
+        if [ "$t" != "0" ]; then
+          local timeon=$(echo $t | awk -F- '{print $1}')
+          local timeoff=$(echo $t | awk -F- '{print $2}')
+          if [ "$flag" == "-1" ]; then
+            local weekdays=$(convert_weekdays $z1 $z2 $z3 $z4 $z5 $z6 $z7 '' $flag)
+            for macaddr in $macaddrs
+            do
               iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $weekdays -j ACCEPT
               [ $strict -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $weekdays -j ACCEPT
-            else
+            done
+          else
+            for macaddr in $macaddrs
+            do
               iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
-              [ $strict -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
-            fi
-          fi
-          t=$(echo $timeutc | awk -F ' ' '{print $3}')
-          if [ -n "$t" ]; then
-            local timeon=$(echo $t | awk -F- '{print $1}')
-            local timeoff=$(echo $t | awk -F- '{print $2}')
-            if [ "$flag" == "1" ]; then
-              local weekdays=$(convert_weekdays $z1 $z2 $z3 $z4 $z5 $z6 $z7 '' $flag)
-              iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $weekdays -j ACCEPT
-              [ $strict -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $weekdays -j ACCEPT
-            else
-              iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
-              [ $strict -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
-            fi
+             [ $strict -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
+            done
           fi
         fi
-      done
+        t=$(echo $timeutc | awk -F ' ' '{print $3}')
+        if [ -n "$t" ]; then
+          local timeon=$(echo $t | awk -F- '{print $1}')
+          local timeoff=$(echo $t | awk -F- '{print $2}')
+          if [ "$flag" == "1" ]; then
+            for macaddr in $macaddrs
+            do
+              local weekdays=$(convert_weekdays $z1 $z2 $z3 $z4 $z5 $z6 $z7 '' $flag)
+              iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $weekdays -j ACCEPT
+              [ $strict -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $weekdays -j ACCEPT
+            done
+          else
+            for macaddr in $macaddrs
+            do
+              iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
+              [ $strict -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
+            done
+          fi
+        fi
+      fi
     fi
     for n in $(seq 1 7)
     do
