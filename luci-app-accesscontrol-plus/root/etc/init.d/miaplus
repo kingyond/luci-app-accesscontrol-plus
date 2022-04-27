@@ -198,17 +198,18 @@ add_rules(){
         break
       fi
       if [ "$enable" == "1" ]; then
-        local macaddrs=$(uci_get_mac_by_template $s '')
-        if [ -n "$macaddrs" ]; then
-          add_rule $s $macaddrs
-        fi
+        add_rule $s
       fi
     done
   fi
 }
 add_rule(){
   ipv6enable=$(uci get miaplus.@basic[0].ipv6enable)
-  for macaddr in $2
+  local macaddrs=$(uci_get_mac_by_template $1 '')
+  if [ -z "$macaddrs" ]; then
+    exit 0
+  fi
+  for macaddr in $macaddrs
   do
     iptables -t filter -A MIAPLUS  -m mac --mac-source $macaddr -j DROP
     [ $strict -eq 1 ] && ip6tables -t filter -A MIAPLUS  -m mac --mac-source $macaddr -j DROP
@@ -237,7 +238,7 @@ add_rule(){
       break
     fi
     if [ "$enable" == "1" ]; then
-      for macaddr in $2
+      for macaddr in $macaddrs
       do
         if [ $UTCTZ == "1" ]; then
           iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
