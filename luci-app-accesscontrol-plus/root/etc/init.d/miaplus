@@ -212,7 +212,7 @@ add_rule(){
   for macaddr in $macaddrs
   do
     iptables -t filter -A MIAPLUS  -m mac --mac-source $macaddr -j DROP
-    [ $strict -eq 1 ] && ip6tables -t filter -A MIAPLUS  -m mac --mac-source $macaddr -j DROP
+    [ $ipv6enable -eq 1 ] && ip6tables -t filter -A MIAPLUS  -m mac --mac-source $macaddr -j DROP
   done
   for i in $(seq 0 100)
   do
@@ -242,7 +242,7 @@ add_rule(){
         for macaddr in $macaddrs
         do
           iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
-          [ $strict -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
+          [ $ipv6enable -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
         done
       else
         local timeutc=$(convert_time_on_off $timeon $timeoff '')
@@ -256,13 +256,13 @@ add_rule(){
             for macaddr in $macaddrs
             do
               iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $weekdays -j ACCEPT
-              [ $strict -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $weekdays -j ACCEPT
+              [ $ipv6enable -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $weekdays -j ACCEPT
             done
           else
             for macaddr in $macaddrs
             do
               iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
-             [ $strict -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
+             [ $ipv6enable -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
             done
           fi
         fi
@@ -275,13 +275,13 @@ add_rule(){
             do
               local weekdays=$(convert_weekdays $z1 $z2 $z3 $z4 $z5 $z6 $z7 '' $flag)
               iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $weekdays -j ACCEPT
-              [ $strict -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $weekdays -j ACCEPT
+              [ $ipv6enable -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $weekdays -j ACCEPT
             done
           else
             for macaddr in $macaddrs
             do
               iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
-              [ $strict -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
+              [ $ipv6enable -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
             done
           fi
         fi
@@ -336,8 +336,9 @@ stop(){
   iptables -t nat -D PREROUTING -p tcp --dport 53 -j REDIRECT --to-ports 53 -m comment --comment "Rule For Control" 2>/dev/null
   iptables -t filter -F MIAPLUS 2>/dev/null
   iptables -t filter -X MIAPLUS 2>/dev/null
-  ipv6enable=$(uci get miaplus.@basic[0].ipv6enable)
-  if [ "$ipv6enable" == "1" ]; then
+
+  notfound=$(type ip6tables | grep not)
+  if [ -z "$notfound" ]; then
     ip6tables -t filter -D FORWARD -m comment --comment "Rule For Control" -j MIAPLUS 2>/dev/null
     ip6tables -D INPUT -p udp --dport 53 -m comment --comment "Rule For Control" -j MIAPLUS 2>/dev/null
     ip6tables -D INPUT -p tcp --dport 53 -m comment --comment "Rule For Control" -j MIAPLUS 2>/dev/null
