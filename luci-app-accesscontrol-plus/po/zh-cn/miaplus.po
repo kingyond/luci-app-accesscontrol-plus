@@ -52,5 +52,3 @@ msgstr "日"
 msgid "Template"
 msgstr "模板"
 
-msgid "UTC timezone"
-msgstr "UTC时区"

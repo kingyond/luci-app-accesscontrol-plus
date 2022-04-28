@@ -16,9 +16,6 @@ e = t:option(Flag, "strict", translate("Strict Mode"))
 e.description = translate("Strict Mode will degrade CPU performance, but it can achieve better results")
 e.rmempty = false
 
-e = t:option(Flag, "utctz", translate("UTC Timezone"))
-e.rmempty = false
-
 e = t:option(Flag, "ipv6enable", translate("IPV6 Enabled"))
 e.rmempty = false
 

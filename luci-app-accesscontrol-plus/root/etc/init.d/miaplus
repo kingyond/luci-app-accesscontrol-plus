@@ -9,7 +9,6 @@
 START=30
 
 CONFIG=miaplus
-UTCTZ="0"
 
 uci_export_section_name() {
   local ret=$(uci -n export $CONFIG | grep "config $1" | awk '{print $3}' | awk -F\' '{print $2}')
@@ -49,144 +48,7 @@ uci_get_mac_by_template(){
   done
   echo ${ret:=$2}
 }
-#result "-1/0/1 **:**-**:**/0 [**:**-**:**]"
-#first param -1/0/1 -1=minus one day 0=current day 1=add one day
-#second param from time to time or 0=no time, when first param is -1, the time minus one day ...
-#third param from time to time, when first param is 1, the time add one day ...
-convert_time_on_off(){
-  local tz=$(date +%z | sed -E 's/(.)(..)(..)/\1 \2 \3/')
-  local flag=""
-  local timeon=$1
-  local timeonoff=$2
-  local ret="0 $1-$2"
-  for t in $tz
-  do
-    if [ "$t" == "00" ]; then
-      continue
-    fi
-    if [ "$t" == "+" ]; then
-      flag="-"
-    elif [ "$t" == "-" ]; then
-      flag="+"
-    else
-      houron=$(echo $timeon | awk -F: '{print $1}')
-      minon=$(echo $timeon | awk -F: '{print $2}')
-      houroff=$(echo $timeonoff | awk -F: '{print $1}')
-      minoff=$(echo $timeonoff | awk -F: '{print $2}')
-      if [ "$flag" == "+" ]; then
-        houron_utc=`expr $houron + $t`
-        if [ "$houron_utc" -gt 23 ]; then
-          houron_utc=`expr $houron_utc - 24`
-          houroff_utc=`expr $houroff + $t - 24`
-          ret="1 0 $houron_utc:$minon-$houroff_utc:$minoff"
-        else
-          houroff_utc=`expr $houroff + $t`
-          if [ "$houroff_utc" -gt 23 ]; then
-            houroff_utc=`expr $houroff_utc - 24`
-            ret="1 $houron_utc:$minon-23:59 00:00-$houroff_utc:$minoff"
-          else
-            ret="0 $houron_utc:$minon-$houroff_utc:$minoff"
-          fi
-        fi
-      elif [ "$flag" == "-" ]; then
-        if [ "$houroff" -lt "$t" ]; then
-          houron_utc=`expr $houron - $t + 24`
-          houroff_utc=`expr $houroff - $t + 24`
-          ret="-1 $houron_utc:$minon-$houroff_utc:$minoff"
-        else
-          if [ "$houron" -lt "$t" ]; then
-            houron_utc=`expr $houron - $t + 24`
-            houroff_utc=`expr $houroff - $t`
-            ret="-1 $houron_utc:$minon-23:59 00:00-$houroff_utc:$minoff"
-          else
-            houron_utc=`expr $houron - $t`
-            houroff_utc=`expr $houroff - $t`
-            ret="0 $houron_utc:$minon-$houroff_utc:$minoff"
-          fi
-        fi
-      fi
-    fi
-  done
-  echo ${ret:=$3}
-}
-convert_weekdays(){
-  local z1="0"
-  local z2="0"
-  local z3="0"
-  local z4="0"
-  local z5="0"
-  local z6="0"
-  local z7="0"
-  Z1=""
-  Z2=""
-  Z3=""
-  Z4=""
-  Z5=""
-  Z6=""
-  Z7=""
-  if [ "$9" == "-1" ]; then
-    if [ "$1" == "1" ]; then
-      z7=$1
-    fi
-    if [ "$2" == "1" ]; then
-      z1=$2
-    fi
-    if [ "$3" == "1" ]; then
-      z2=$3
-    fi
-    if [ "$4" == "1" ]; then
-      z3=$4
-    fi
-    if [ "$5" == "1" ]; then
-      z4=$5
-    fi
-    if [ "$6" == "1" ]; then
-      z5=$6
-    fi
-    if [ "$7" == "1" ]; then
-      z6=$7
-    fi
-  elif [ "$9" == "1" ]; then
-    if [ "$1" == "1" ]; then
-      z2=$1
-    fi
-    if [ "$2" == "1" ]; then
-      z3=$2
-    fi
-    if [ "$3" == "1" ]; then
-      z4=$3
-    fi
-    if [ "$4" == "1" ]; then
-      z5=$4
-    fi
-    if [ "$5" == "1" ]; then
-      z6=$5
-    fi
-    if [ "$6" == "1" ]; then
-      z7=$6
-    fi
-    if [ "$7" == "1" ]; then
-      z1=$7
-    fi
-  else
-    local z1=$1
-    local z2=$2
-    local z3=$3
-    local z4=$4
-    local z5=$5
-    local z6=$6
-    local z7=$7
-  fi
-  [ "$z1" == "1" ] && Z1="Mon,"
-  [ "$z2" == "1" ] && Z2="Tue,"
-  [ "$z3" == "1" ] && Z3="Wed,"
-  [ "$z4" == "1" ] && Z4="Thu,"
-  [ "$z5" == "1" ] && Z5="Fri,"
-  [ "$z6" == "1" ] && Z6="Sat,"
-  [ "$z7" == "1" ] && Z7="Sun"
-  local ret=$Z1$Z2$Z3$Z4$Z5$Z6$Z7
-  echo ${ret:=$8}
-}
+
 add_rules(){
   local sections=$(uci_export_section_name templates '')
   if [ -n "$sections" ]; then
@@ -238,54 +100,11 @@ add_rule(){
       break
     fi
     if [ "$enable" == "1" ]; then
-      if [ $UTCTZ == "1" ]; then
-        for macaddr in $macaddrs
-        do
-          iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
-          [ $ipv6enable -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
-        done
-      else
-        local timeutc=$(convert_time_on_off $timeon $timeoff '')
-        local flag=$(echo $timeutc | awk -F ' ' '{print $1}')
-        local t=$(echo $timeutc | awk -F ' ' '{print $2}')
-        if [ "$t" != "0" ]; then
-          local timeon=$(echo $t | awk -F- '{print $1}')
-          local timeoff=$(echo $t | awk -F- '{print $2}')
-          if [ "$flag" == "-1" ]; then
-            local weekdays=$(convert_weekdays $z1 $z2 $z3 $z4 $z5 $z6 $z7 '' $flag)
-            for macaddr in $macaddrs
-            do
-              iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $weekdays -j ACCEPT
-              [ $ipv6enable -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $weekdays -j ACCEPT
-            done
-          else
-            for macaddr in $macaddrs
-            do
-              iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
-             [ $ipv6enable -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
-            done
-          fi
-        fi
-        t=$(echo $timeutc | awk -F ' ' '{print $3}')
-        if [ -n "$t" ]; then
-          local timeon=$(echo $t | awk -F- '{print $1}')
-          local timeoff=$(echo $t | awk -F- '{print $2}')
-          if [ "$flag" == "1" ]; then
-            for macaddr in $macaddrs
-            do
-              local weekdays=$(convert_weekdays $z1 $z2 $z3 $z4 $z5 $z6 $z7 '' $flag)
-              iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $weekdays -j ACCEPT
-              [ $ipv6enable -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $weekdays -j ACCEPT
-            done
-          else
-            for macaddr in $macaddrs
-            do
-              iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
-              [ $ipv6enable -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
-            done
-          fi
-        fi
-      fi
+      for macaddr in $macaddrs
+      do
+        iptables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
+        [ $ipv6enable -eq 1 ] && ip6tables -t filter -I MIAPLUS  -m mac --mac-source $macaddr -m time --kerneltz --timestart $timeon --timestop $timeoff --weekdays $Z1$Z2$Z3$Z4$Z5$Z6$Z7 -j ACCEPT
+      done
     fi
     for n in $(seq 1 7)
     do
@@ -316,9 +135,9 @@ start(){
   iptables -t nat -A PREROUTING -p tcp --dport 53 -j REDIRECT --to-ports 53 -m comment --comment "Rule For Control"
   strict=$(uci get miaplus.@basic[0].strict)
   [ $strict -eq 1 ] && iptables -t filter -I FORWARD -m comment --comment "Rule For Control" -j MIAPLUS
-  UTCTZ=$(uci get miaplus.@basic[0].utctz)
+
   ipv6enable=$(uci get miaplus.@basic[0].ipv6enable)
-  if [ "$ipv6enable" == "1" ]; then
+  if [ "$ipv6enable" -eq 1 ]; then
     ip6tables -t filter -N MIAPLUS
     ip6tables -I INPUT -p udp --dport 53 -m comment --comment "Rule For Control" -j MIAPLUS
     ip6tables -I INPUT -p tcp --dport 53 -m comment --comment "Rule For Control" -j MIAPLUS
