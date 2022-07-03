@@ -37,7 +37,7 @@ jobs:
 
       - name: Test
         run: |
-          ls -R artifacts
+          ls -R ./
 
       - name: Store packages
         uses: actions/upload-artifact@v2
