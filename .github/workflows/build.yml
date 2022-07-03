@@ -37,14 +37,14 @@ jobs:
 
       - name: Test
         run: |
-          ls -R ./
+          ls -R ./bin
 
       - name: Store packages
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.arch}}-packages
           path: |
-            artifacts/packages/${{ matrix.arch }}/base/luci-app-accesscontrol-plus*.ipk
+            bin/packages/${{ matrix.arch }}/base/luci-app-accesscontrol-plus*.ipk
 
       - name: Deploy Files To Release (Tag)
         uses: ncipollo/release-action@v1.8.0
@@ -52,7 +52,7 @@ jobs:
         with:
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "artifacts/packages/${{ matrix.arch }}/base/luci-app-accesscontrol-plus*.ipk, artifacts/packages/${{ matrix.arch }}/base/luci-i18n-accesscontrol-plus*.ipk"
+          artifacts: "bin/packages/${{ matrix.arch }}/base/luci-app-accesscontrol-plus*.ipk, artifacts/packages/${{ matrix.arch }}/base/luci-i18n-accesscontrol-plus*.ipk"
 
       - name: Deploy Files To Release (Commit)
         uses: ncipollo/release-action@v1.8.0
@@ -61,4 +61,4 @@ jobs:
           allowUpdates: true
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ env.COMMIT }}
-          artifacts: "artifacts/packages/${{ matrix.arch }}/base/luci-app-accesscontrol-plus*.ipk, artifacts/packages/${{ matrix.arch }}/base/luci-i18n-accesscontrol-plus*.ipk"
+          artifacts: "bin/packages/${{ matrix.arch }}/base/luci-app-accesscontrol-plus*.ipk, artifacts/packages/${{ matrix.arch }}/base/luci-i18n-accesscontrol-plus*.ipk"
