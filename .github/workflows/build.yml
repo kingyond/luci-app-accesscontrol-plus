@@ -31,7 +31,7 @@ jobs:
         uses: kingyond/gh-action-sdk@master
         env:
           ARCH: ${{ matrix.arch }}
-          PACKAGES: luci-app-accesscontrol-plus
+          PACKAGES: luci-base luci-app-accesscontrol-plus
           CUSTOM_PKG_DIR: luci-app-accesscontrol-plus
           CUSTOM_SRC_DIR: luci-app-accesscontrol-plus
 
