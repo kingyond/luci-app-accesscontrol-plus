@@ -44,7 +44,7 @@ jobs:
         with:
           name: ${{ matrix.arch}}-packages
           path: |
-            bin/packages/${{ matrix.arch }}/base/luci-app-accesscontrol-plus*.ipk
+            artifacts/packages/${{ matrix.arch }}/base/luci-app-accesscontrol-plus*.ipk
 
       - name: Deploy Files To Release (Tag)
         uses: ncipollo/release-action@v1.8.0
